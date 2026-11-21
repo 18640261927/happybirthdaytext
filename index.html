@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#fff0f5">
-  <title>神秘惊喜</title>
+  <title>神秘惊喜 · 测试版</title>
   <style>
     :root {
       color-scheme: light;
@@ -395,7 +395,7 @@
 
   <main class="site" id="site" hidden>
     <section class="content-card" id="countdown-screen" aria-labelledby="page-title">
-      <p class="eyebrow">A LITTLE SOMETHING FOR YOU</p>
+      <p class="eyebrow">TEST MODE · 神秘惊喜</p>
       <h1 class="page-title" id="page-title">神秘惊喜</h1>
       <p class="page-subtitle">一份心意正在路上，等时间揭晓。</p>
       <div class="countdown" id="countdown" role="timer" aria-label="距离惊喜解锁的倒计时">
@@ -404,7 +404,7 @@
         <div class="time-unit"><span class="time-value" id="minutes">--</span><span class="time-label">分</span></div>
         <div class="time-unit"><span class="time-value" id="seconds">--</span><span class="time-label">秒</span></div>
       </div>
-      <p class="target-date">解锁时间：2026 年 12 月 23 日 00:00（东八区）</p>
+      <p class="target-date">测试模式：确认横屏后 30 秒解锁</p>
     </section>
 
     <section class="content-card" id="password-screen" aria-labelledby="password-title" hidden>
@@ -762,8 +762,8 @@
           <path d="M8 14.8h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"></path>
         </svg><span>${deviceName}</span>`;
 
-      // 2026-12-23 00:00 at UTC+8 is 2026-12-22 16:00 UTC.
-      const unlockAt = Date.UTC(2026, 11, 22, 16, 0, 0);
+      // Test mode starts its short countdown after the orientation prompt.
+      let unlockAt = null;
       let countdownInterval;
       const twoDigits = (value) => String(value).padStart(2, "0");
 
@@ -777,6 +777,7 @@
       }
 
       function updateCountdown() {
+        if (unlockAt === null) return;
         const remaining = unlockAt - Date.now();
         if (remaining <= 0) {
           countdownScreen.hidden = true;
@@ -792,9 +793,6 @@
         setCountdownValue("minutes", twoDigits(Math.floor(totalSeconds % 3600 / 60)));
         setCountdownValue("seconds", twoDigits(totalSeconds % 60));
       }
-
-      updateCountdown();
-      if (passwordScreen.hidden) countdownInterval = window.setInterval(updateCountdown, 1000);
 
       const isLandscape = () => window.innerWidth > window.innerHeight;
       const updateOrientation = () => {
@@ -814,6 +812,9 @@
         if (!isLandscape()) return;
         gate.hidden = true;
         site.hidden = false;
+        unlockAt = Date.now() + 30_000;
+        updateCountdown();
+        countdownInterval = window.setInterval(updateCountdown, 1000);
         if (!passwordScreen.hidden) passwordInput.focus();
       });
       window.addEventListener("resize", updateOrientation, { passive: true });
