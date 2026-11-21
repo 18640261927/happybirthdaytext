@@ -276,8 +276,8 @@
     .memory-photo:first-of-type { transform: rotate(-4deg); }
     .memory-photo:last-of-type { transform: rotate(4deg); }
     .memory-photo img { display: block; width: 100%; height: 100%; border-radius: 4px; object-fit: cover; }
-    .heart-field { position: absolute; z-index: 4; inset: 0; overflow: hidden; pointer-events: none; }
-    .collect-heart {
+    .star-field { position: absolute; z-index: 4; inset: 0; overflow: hidden; pointer-events: none; }
+    .collect-star {
       position: absolute;
       display: grid;
       width: 38px;
@@ -285,22 +285,22 @@
       place-items: center;
       padding: 0;
       border: 0;
-      color: #ed6b91;
+      color: #f1c75b;
       background: transparent;
-      font-size: 23px;
+      font-size: 22px;
       line-height: 1;
-      text-shadow: 0 2px 8px rgba(194, 70, 111, .28);
+      text-shadow: 0 2px 9px rgba(205, 156, 49, .42);
       cursor: pointer;
       pointer-events: auto;
       -webkit-tap-highlight-color: transparent;
-      animation: heart-hover 2.8s ease-in-out var(--delay, 0s) infinite;
+      animation: star-hover 2.8s ease-in-out var(--delay, 0s) infinite;
       transition: opacity .22s ease, transform .22s ease;
     }
-    .collect-heart:nth-child(3n) { color: #f184a3; }
-    .collect-heart:nth-child(3n + 1) { color: #dc5d87; }
-    .collect-heart.is-collected { opacity: 0; transform: scale(1.8); pointer-events: none; }
-    @keyframes heart-hover { 0%, 100% { translate: 0 0; } 50% { translate: 0 -7px; } }
-    .heart-status {
+    .collect-star:nth-child(3n) { color: #ffe28a; }
+    .collect-star:nth-child(3n + 1) { color: #e9b94b; }
+    .collect-star.is-collected { opacity: 0; transform: scale(1.8) rotate(35deg); pointer-events: none; }
+    @keyframes star-hover { 0%, 100% { translate: 0 0; } 50% { translate: 0 -7px; } }
+    .star-status {
       position: absolute;
       z-index: 5;
       left: 50%;
@@ -362,7 +362,7 @@
       body.device-phone .memory-rail { gap: 5px; }
       body.device-phone .octopus-mascot { width: 46px; }
       body.device-phone .memory-photo { width: 78px; padding: 3px 3px 6px; }
-      .heart-status { bottom: 3px; padding: 4px 9px; }
+      .star-status { bottom: 3px; padding: 4px 9px; }
       body.device-phone .blessing-card { padding: 10px 16px; }
       .blessing-title { margin-bottom: 7px; font-size: 30px; }
       body.device-phone .blessing-copy { font-size: 14px; line-height: 1.48; }
@@ -476,8 +476,8 @@
         <figure class="memory-photo"><img src="20a9e406558139b99768590c37d6e3f7_720.png" alt="生日照片二"></figure>
       </aside>
     </div>
-    <div class="heart-field" id="heart-field" aria-label="点击收集爱心"></div>
-    <p class="heart-status" id="heart-status" aria-live="polite">收集小爱心 0/8</p>
+    <div class="star-field" id="star-field" aria-label="点击收集星星"></div>
+    <p class="star-status" id="star-status" aria-live="polite">收集小星星 0/8</p>
   </main>
 
   <script>
@@ -497,8 +497,8 @@
       const cakeScreen = document.getElementById("cake-screen");
       const cakeFrame = document.getElementById("cake-frame");
       const starCanvas = document.getElementById("star-canvas");
-      const heartField = document.getElementById("heart-field");
-      const heartStatus = document.getElementById("heart-status");
+      const collectibleStarField = document.getElementById("star-field");
+      const collectibleStarStatus = document.getElementById("star-status");
       const passwordForm = document.getElementById("password-form");
       const passwordInput = document.getElementById("password-input");
       const passwordError = document.getElementById("password-error");
@@ -619,7 +619,7 @@
         cakeScreen.hidden = true;
         cakeFrame.src = "about:blank";
         revealScreen.hidden = false;
-        createCollectibleHearts();
+        createCollectibleStars();
         startStarfield();
       }
 
@@ -695,35 +695,35 @@
         if (!reducedMotion) starAnimation = window.requestAnimationFrame(animateStars);
       }
 
-      function createCollectibleHearts() {
+      function createCollectibleStars() {
         const positions = [
           ["3%", "16%"], ["6%", "43%"], ["4%", "76%"], ["19%", "88%"],
           ["92%", "14%"], ["96%", "40%"], ["94%", "74%"], ["80%", "89%"]
         ];
         let collected = 0;
-        heartField.replaceChildren();
-        heartStatus.textContent = `收集小爱心 0/${positions.length}`;
+        collectibleStarField.replaceChildren();
+        collectibleStarStatus.textContent = `收集小星星 0/${positions.length}`;
 
         positions.forEach(([left, top], index) => {
-          const heart = document.createElement("button");
-          heart.type = "button";
-          heart.className = "collect-heart";
-          heart.textContent = "♥";
-          heart.setAttribute("aria-label", `收集第 ${index + 1} 颗爱心`);
-          heart.style.left = left;
-          heart.style.top = top;
-          heart.style.setProperty("--delay", `${index * -0.27}s`);
-          heart.addEventListener("click", () => {
-            if (heart.disabled) return;
-            heart.disabled = true;
+          const star = document.createElement("button");
+          star.type = "button";
+          star.className = "collect-star";
+          star.textContent = "✦";
+          star.setAttribute("aria-label", `收集第 ${index + 1} 颗星星`);
+          star.style.left = left;
+          star.style.top = top;
+          star.style.setProperty("--delay", `${index * -0.27}s`);
+          star.addEventListener("click", () => {
+            if (star.disabled) return;
+            star.disabled = true;
             collected += 1;
-            heartStatus.textContent = collected === positions.length
-              ? "爱心都收集到啦！"
-              : `收集小爱心 ${collected}/${positions.length}`;
-            heart.classList.add("is-collected");
-            window.setTimeout(() => heart.remove(), 240);
+            collectibleStarStatus.textContent = collected === positions.length
+              ? "星星都收集到啦！"
+              : `收集小星星 ${collected}/${positions.length}`;
+            star.classList.add("is-collected");
+            window.setTimeout(() => star.remove(), 240);
           });
-          heartField.append(heart);
+          collectibleStarField.append(star);
         });
       }
 
