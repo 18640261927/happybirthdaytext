@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff0f5">
+  <title>神秘惊喜</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #1d1d1f;
+      background: #fff0f5;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      --blue: #007aff;
+      --muted: #6e6e73;
+      --separator: rgba(60, 60, 67, .14);
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { min-height: 100svh; background: #fff0f5; }
+    button, input { font: inherit; }
+    [hidden] { display: none !important; }
+
+    .setup-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right))
+        max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      background: rgba(255, 240, 245, .78);
+      -webkit-backdrop-filter: blur(18px);
+      backdrop-filter: blur(18px);
+    }
+    .setup-dialog {
+      width: min(100%, 410px);
+      padding: 22px 24px 20px;
+      border: 1px solid rgba(0, 0, 0, .06);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .96);
+      box-shadow: 0 16px 44px rgba(0, 0, 0, .10), 0 2px 8px rgba(0, 0, 0, .04);
+    }
+    .window-dots { display: flex; gap: 6px; margin-bottom: 23px; }
+    .window-dots i { width: 9px; height: 9px; border-radius: 50%; background: #d2d2d7; }
+    .eyebrow { margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .09em; }
+    .setup-dialog h1 { margin: 0; color: #242124; font-size: 22px; font-weight: 650; letter-spacing: -.025em; }
+    .setup-copy { margin: 10px 0 20px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .device-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 15px 0 0;
+      padding: 8px 11px;
+      border: 1px solid var(--separator);
+      border-radius: 10px;
+      color: #3a3a3c;
+      background: #fafafa;
+      font-size: 13px;
+      font-weight: 550;
+    }
+    .device-label svg { width: 14px; height: 14px; color: #7c7c82; }
+    .primary-button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 11px;
+      color: #fff;
+      background: var(--blue);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color .15s ease, opacity .15s ease;
+    }
+    .primary-button:hover:not(:disabled) { background: #006de5; }
+    .primary-button:focus-visible { outline: 3px solid rgba(0, 122, 255, .28); outline-offset: 2px; }
+    .primary-button:disabled { opacity: .42; cursor: default; }
+    .setup-dialog > .primary-button { width: 100%; }
+    .orientation-note { min-height: 18px; margin: 10px 0 0; color: var(--muted); text-align: center; font-size: 11px; }
+
+    .site {
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      padding: max(22px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+        max(22px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    }
+    .content-card {
+      width: min(100%, 760px);
+      padding: clamp(28px, 6vw, 58px) clamp(24px, 6vw, 64px);
+      border: 1px solid rgba(60, 60, 67, .08);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .86);
+      box-shadow: 0 18px 54px rgba(31, 35, 41, .06), 0 2px 8px rgba(31, 35, 41, .025);
+      text-align: center;
+    }
+    .content-card .eyebrow { margin-bottom: 12px; }
+    .page-title { margin: 0; font-size: clamp(30px, 5vw, 44px); font-weight: 650; letter-spacing: -.045em; }
+    .page-subtitle { margin: 12px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+    .countdown {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(8px, 2vw, 16px);
+      margin: clamp(28px, 5vh, 44px) 0 0;
+    }
+    .time-unit { min-width: 0; padding: 18px 8px 15px; border-radius: 17px; background: #fff7f9; perspective: 700px; }
+    .time-value { display: block; font-variant-numeric: tabular-nums; font-size: clamp(34px, 5.4vw, 58px); font-weight: 550; letter-spacing: -.055em; line-height: 1; transform-style: preserve-3d; backface-visibility: hidden; }
+    .time-value.is-flipping { animation: countdown-page .42s cubic-bezier(.22, .61, .36, 1); }
+    @keyframes countdown-page {
+      0% { transform: rotateX(-82deg); opacity: .55; }
+      55% { transform: rotateX(9deg); opacity: 1; }
+      100% { transform: rotateX(0); opacity: 1; }
+    }
+    .time-label { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; }
+    .target-date { margin: 20px 0 0; color: #8a8a90; font-size: 12px; }
+
+    .password-form { width: min(100%, 360px); margin: 26px auto 0; }
+    .code-entry { position: relative; width: min(100%, 340px); margin: 0 auto; }
+    .code-cells { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+    .code-cell {
+      position: relative;
+      height: clamp(58px, 17svh, 76px);
+      display: grid;
+      place-items: center;
+      border: 1px solid #85858d;
+      border-radius: 11px;
+      background: rgba(255, 255, 255, .92);
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .code-cell-value { color: #36363a; font-size: clamp(30px, 5vw, 38px); font-weight: 600; line-height: 1; }
+    .code-input { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: text; }
+    .password-form.has-focus .code-cell.is-active { border-color: #51515a; box-shadow: 0 0 0 1px rgba(81, 81, 90, .16); }
+    .password-form.has-focus .code-cell.is-active::after {
+      position: absolute;
+      width: 2px;
+      height: 27px;
+      content: "";
+      border-radius: 1px;
+      background: #595961;
+      animation: caret-blink 1s steps(2, start) infinite;
+    }
+    @keyframes caret-blink { to { visibility: hidden; } }
+    .password-actions { min-height: 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+    .password-error { margin: 0; color: #d70015; font-size: 12px; text-align: left; }
+    .reset-password { flex: 0 0 auto; padding: 4px 0; border: 0; color: var(--blue); background: transparent; font-size: 12px; cursor: pointer; }
+
+    /* Short, scattered blessing pop-ups lead into the cake. */
+    .popup-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 18;
+      overflow: hidden;
+      background: #ffe7ef;
+      opacity: 1;
+      transition: opacity .68s ease;
+    }
+    .popup-scene.is-fading { opacity: 0; pointer-events: none; }
+    .popup-background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .popup-scene::after { position: absolute; inset: 0; z-index: 1; content: ""; background: rgba(255, 242, 247, .14); pointer-events: none; }
+    .popup-card {
+      position: absolute;
+      z-index: 2;
+      width: 150px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 8px 10px;
+      border: 2px solid rgba(255, 255, 255, .92);
+      border-radius: 16px;
+      color: var(--ink, #a8365a);
+      background: var(--card, #ffc9da);
+      box-shadow: 0 6px 18px rgba(110, 60, 80, .15);
+      text-align: center;
+      font-size: 13px;
+      font-weight: 650;
+      line-height: 1.25;
+      opacity: 0;
+      transform: translate3d(0, 12px, 0) scale(.96) rotate(var(--start-tilt, 0deg));
+      transition: opacity .55s ease, transform .72s cubic-bezier(.22, .61, .36, 1);
+    }
+    .popup-card.is-shown { opacity: 1; transform: translate3d(0, 0, 0) scale(1) rotate(var(--tilt, 0deg)); }
+    .popup-skip {
+      position: absolute;
+      z-index: 4;
+      left: 50%;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      min-height: 40px;
+      padding: 0 17px;
+      border: 1px solid rgba(255, 255, 255, .5);
+      border-radius: 21px;
+      color: #5b4750;
+      background: rgba(255, 255, 255, .8);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      font-size: 13px;
+      cursor: pointer;
+      transform: translateX(-50%);
+    }
+
+    /* The cake stays on screen until the candle is blown out. */
+    .cake-screen { position: fixed; inset: 0; z-index: 20; overflow: hidden; background: #2b2b2d; }
+    #cake-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #2b2b2d; }
+
+    .blessing-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+        max(14px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      isolation: isolate;
+      background: #f9e6ed;
+    }
+    .blessing-background { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .blessing-screen::before { position: absolute; z-index: -1; inset: 0; content: ""; background: rgba(255, 237, 243, .16); }
+    #star-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .blessing-card {
+      position: relative;
+      width: min(100%, 1040px);
+      max-height: 90svh;
+      overflow-y: auto;
+      padding: clamp(20px, 3.5vh, 34px) clamp(22px, 4vw, 48px);
+      border: 1px solid rgba(255, 255, 255, .74);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, .78);
+      box-shadow: 0 18px 52px rgba(107, 55, 74, .14);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      animation: blessing-arrive .7s cubic-bezier(.22, .61, .36, 1) both;
+    }
+    @keyframes blessing-arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .blessing-card .eyebrow { margin-bottom: 7px; color: #9a7180; text-align: center; }
+    .blessing-title { margin: 0 0 14px; color: #c44f77; font-size: clamp(30px, 3.8vw, 42px); font-weight: 650; letter-spacing: -.035em; text-align: center; }
+    .blessing-copy { color: #51434a; font-size: clamp(16px, 1.9vw, 20px); line-height: 1.58; text-align: left; }
+    .blessing-copy p { margin: 0 0 9px; }
+    .blessing-copy p:last-child { margin-bottom: 0; }
+    .blessing-layout {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(150px, 190px);
+      align-items: center;
+      gap: clamp(12px, 2vw, 24px);
+      width: min(100%, 1240px);
+      max-height: 94svh;
+    }
+    .blessing-card { width: 100%; max-height: 94svh; }
+    .memory-rail {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(8px, 1.5vh, 14px);
+    }
+    .octopus-mascot { width: clamp(68px, 9vw, 108px); flex: none; overflow: visible; filter: drop-shadow(0 5px 8px rgba(32, 115, 171, .2)); animation: octopus-bob 3.8s ease-in-out infinite; }
+    @keyframes octopus-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-6px) rotate(3deg); } }
+    .memory-photo {
+      width: min(100%, 146px);
+      aspect-ratio: .78;
+      margin: 0;
+      padding: 6px 6px 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .9);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 9px 25px rgba(77, 42, 57, .2);
+    }
+    .memory-photo:first-of-type { transform: rotate(-4deg); }
+    .memory-photo:last-of-type { transform: rotate(4deg); }
+    .memory-photo img { display: block; width: 100%; height: 100%; border-radius: 4px; object-fit: cover; }
+    .heart-field { position: absolute; z-index: 4; inset: 0; overflow: hidden; pointer-events: none; }
+    .collect-heart {
+      position: absolute;
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      color: #ed6b91;
+      background: transparent;
+      font-size: 23px;
+      line-height: 1;
+      text-shadow: 0 2px 8px rgba(194, 70, 111, .28);
+      cursor: pointer;
+      pointer-events: auto;
+      -webkit-tap-highlight-color: transparent;
+      animation: heart-hover 2.8s ease-in-out var(--delay, 0s) infinite;
+      transition: opacity .22s ease, transform .22s ease;
+    }
+    .collect-heart:nth-child(3n) { color: #f184a3; }
+    .collect-heart:nth-child(3n + 1) { color: #dc5d87; }
+    .collect-heart.is-collected { opacity: 0; transform: scale(1.8); pointer-events: none; }
+    @keyframes heart-hover { 0%, 100% { translate: 0 0; } 50% { translate: 0 -7px; } }
+    .heart-status {
+      position: absolute;
+      z-index: 5;
+      left: 50%;
+      bottom: max(8px, env(safe-area-inset-bottom));
+      margin: 0;
+      padding: 6px 12px;
+      border: 1px solid rgba(255, 255, 255, .78);
+      border-radius: 999px;
+      color: #9e526d;
+      background: rgba(255, 255, 255, .78);
+      box-shadow: 0 4px 16px rgba(107, 55, 74, .1);
+      font-size: 11px;
+      white-space: nowrap;
+      transform: translateX(-50%);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+
+    /* iPad landscape layout. */
+    body.device-tablet .setup-dialog { width: min(100%, 440px); padding: 26px 28px 24px; }
+    body.device-tablet .content-card { width: min(760px, 78vw); }
+    body.device-tablet .popup-card { width: 150px; min-height: 60px; }
+
+    /* iPhone 17 landscape layout. */
+    body.device-phone .site { padding-right: max(18px, env(safe-area-inset-right)); padding-left: max(18px, env(safe-area-inset-left)); }
+    body.device-phone .content-card { width: min(100%, 680px); padding: 25px clamp(18px, 5vw, 38px); border-radius: 23px; }
+    body.device-phone .page-title { font-size: clamp(28px, 6vw, 38px); }
+    body.device-phone .page-subtitle { margin-top: 8px; font-size: 12px; }
+    body.device-phone .countdown { gap: 8px; margin-top: 22px; }
+    body.device-phone .time-unit { padding: 14px 4px 12px; border-radius: 13px; }
+    body.device-phone .time-value { font-size: clamp(29px, 7vw, 44px); }
+    body.device-phone .time-label { margin-top: 7px; font-size: 11px; }
+    body.device-phone .target-date { margin-top: 14px; font-size: 11px; }
+    body.device-phone .password-form { margin-top: 20px; }
+    body.device-phone .popup-card { width: 130px; min-height: 50px; padding: 6px 8px; border-radius: 14px; gap: 0; font-size: 11px; }
+    body.device-phone .blessing-layout { grid-template-columns: minmax(0, 1fr) 100px; gap: 10px; width: 100%; max-height: 92svh; }
+    body.device-phone .blessing-card { width: 100%; max-height: 92svh; padding: 15px 16px; border-radius: 18px; }
+    body.device-phone .memory-rail { gap: 8px; }
+    body.device-phone .octopus-mascot { width: 58px; }
+    body.device-phone .memory-photo { width: 94px; padding: 4px 4px 8px; }
+    body.device-phone .blessing-title { margin-bottom: 9px; font-size: 29px; }
+    body.device-phone .blessing-copy { font-size: 16px; line-height: 1.55; }
+    body.device-phone .blessing-copy p { margin-bottom: 6px; }
+
+    @media (max-height: 360px) {
+      .setup-dialog { padding: 15px 20px; }
+      .window-dots { margin-bottom: 13px; }
+      .setup-copy { margin-bottom: 13px; }
+      .content-card { padding-top: 18px; padding-bottom: 18px; }
+      .content-card .eyebrow { margin-bottom: 6px; }
+      .page-title { font-size: 28px; }
+      .page-subtitle { margin-top: 5px; }
+      .countdown { margin-top: 16px; }
+      .time-unit { padding-top: 10px; padding-bottom: 9px; }
+      .target-date { margin-top: 10px; }
+      .blessing-card { padding: 12px 18px; }
+      .blessing-layout { gap: 7px; }
+      body.device-phone .blessing-layout { grid-template-columns: minmax(0, 1fr) 84px; gap: 7px; }
+      body.device-phone .memory-rail { gap: 5px; }
+      body.device-phone .octopus-mascot { width: 46px; }
+      body.device-phone .memory-photo { width: 78px; padding: 3px 3px 6px; }
+      .heart-status { bottom: 3px; padding: 4px 9px; }
+      body.device-phone .blessing-card { padding: 10px 16px; }
+      .blessing-title { margin-bottom: 7px; font-size: 30px; }
+      body.device-phone .blessing-copy { font-size: 14px; line-height: 1.48; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="setup-gate" id="setup-gate">
+    <section class="setup-dialog" id="device-dialog" role="dialog" aria-modal="true" aria-labelledby="device-title">
+      <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+      <p class="eyebrow">惊喜准备中 · 设备识别</p>
+      <h1 id="device-title">为你准备合适的画面</h1>
+      <div class="device-label" id="device-label"></div>
+      <p class="setup-copy">确认后，请将设备切换为横屏查看。</p>
+      <button class="primary-button" id="confirm-device" type="button">确认</button>
+    </section>
+
+    <section class="setup-dialog" id="orientation-dialog" role="dialog" aria-modal="true" aria-labelledby="orientation-title" hidden>
+      <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+      <p class="eyebrow">最后一步</p>
+      <h1 id="orientation-title">请切换为横屏</h1>
+      <p class="setup-copy">请将设备切换为横屏（苹果设备可能需要关闭竖屏锁定）。</p>
+      <button class="primary-button" id="confirm-orientation" type="button">我已横屏，继续</button>
+      <p class="orientation-note" id="orientation-note" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <main class="site" id="site" hidden>
+    <section class="content-card" id="countdown-screen" aria-labelledby="page-title">
+      <p class="eyebrow">A LITTLE SOMETHING FOR YOU</p>
+      <h1 class="page-title" id="page-title">神秘惊喜</h1>
+      <p class="page-subtitle">一份心意正在路上，等时间揭晓。</p>
+      <div class="countdown" id="countdown" role="timer" aria-label="距离惊喜解锁的倒计时">
+        <div class="time-unit"><span class="time-value" id="days">--</span><span class="time-label">天</span></div>
+        <div class="time-unit"><span class="time-value" id="hours">--</span><span class="time-label">时</span></div>
+        <div class="time-unit"><span class="time-value" id="minutes">--</span><span class="time-label">分</span></div>
+        <div class="time-unit"><span class="time-value" id="seconds">--</span><span class="time-label">秒</span></div>
+      </div>
+      <p class="target-date">解锁时间：2026 年 12 月 23 日 00:00（东八区）</p>
+    </section>
+
+    <section class="content-card" id="password-screen" aria-labelledby="password-title" hidden>
+      <p class="eyebrow">THE WAIT IS OVER</p>
+      <h1 class="page-title" id="password-title">请输入密码</h1>
+      <p class="page-subtitle">输入 4 位密码，打开这份心意。</p>
+      <form class="password-form" id="password-form">
+        <div class="code-entry">
+          <div class="code-cells" aria-hidden="true">
+            <span class="code-cell is-active"><span class="code-cell-value"></span></span>
+            <span class="code-cell"><span class="code-cell-value"></span></span>
+            <span class="code-cell"><span class="code-cell-value"></span></span>
+            <span class="code-cell"><span class="code-cell-value"></span></span>
+          </div>
+          <input class="code-input" id="password-input" type="text" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="4 位密码" aria-describedby="password-error">
+        </div>
+        <div class="password-actions">
+          <p class="password-error" id="password-error" role="alert" hidden></p>
+          <button class="reset-password" id="reset-password" type="button">重新输入</button>
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+  <section class="popup-scene" id="popup-scene" aria-label="生日祝福弹窗" hidden>
+    <img class="popup-background" src="2ccc4cfcc9236a3ed50be5b38939d263.jpg" alt="">
+    <div id="popup-container" aria-hidden="true"></div>
+    <button class="popup-skip" id="skip-popups" type="button" hidden>继续看蛋糕</button>
+  </section>
+
+  <section class="cake-screen" id="cake-screen" aria-label="星河蛋糕" hidden>
+    <iframe id="cake-frame" data-src="星河蛋糕.html" title="星河蛋糕生日贺卡" allow="autoplay; microphone"></iframe>
+  </section>
+
+  <main class="blessing-screen" id="reveal-screen" aria-labelledby="blessing-title" hidden>
+    <img class="blessing-background" src="2ccc4cfcc9236a3ed50be5b38939d263.jpg" alt="" aria-hidden="true">
+    <canvas id="star-canvas" aria-hidden="true"></canvas>
+    <div class="blessing-layout">
+    <article class="blessing-card">
+      <p class="eyebrow">给你的祝福 · 2026.12.23</p>
+      <h1 class="blessing-title" id="blessing-title">生日快乐呀！</h1>
+      <div class="blessing-copy">
+        <p>新一岁，学习上希望你刷题顺手，考试发挥稳定，平时辛辛苦苦的付出都能拿到对应的好结果，遇到难的题目也不用慌，慢慢都能搞定，不用总因为成绩给自己太大压力。</p>
+        <p>生活里希望你总能发现很多小开心，想吃的美食、喜欢的小事都可以如愿，累了就停下来歇一歇，不用一直逼着自己往前赶，多留点时间做自己喜欢的事，少碰到糟心麻烦的事。</p>
+        <p>身体一定要好好的，按时吃饭，尽量别熬夜熬太久，刷题再忙也要记得休息，少头疼少不舒服，一直元气满满，有充足的精力去折腾自己喜欢的一切。</p>
+        <p>交朋友方面也顺顺利利，身边留下来的都是真心合拍的人，相处轻松舒服，不用费心猜来猜去，远离让人内耗的关系，一直被温柔和善意包围。</p>
+        <p>希望你每一天都过得轻松又快乐，所有小小的心愿都慢慢实现，不用成为多厉害的人，只要你自己过得舒服自在就好，新一岁继续闪闪发光！生日快乐！</p>
+      </div>
+    </article>
+      <aside class="memory-rail" aria-label="生日照片和蓝色小章鱼">
+        <svg class="octopus-mascot" viewBox="0 0 120 120" role="img" aria-label="蓝色小章鱼">
+          <g fill="none" stroke="#48a9df" stroke-linecap="round" stroke-width="10">
+            <path d="M39 68c-7 9-18 12-20 23-1 7 7 10 12 5 5-4 5-11 12-15"/>
+            <path d="M48 75c-5 11-14 17-11 27 2 7 10 7 13 1 3-6 1-12 7-19"/>
+            <path d="M58 77c-2 12-8 20-3 28 4 6 11 3 12-4 1-6-3-12 1-20"/>
+            <path d="M68 76c2 12 0 20 7 26 5 4 11-1 9-7-1-7-7-10-6-19"/>
+            <path d="M78 72c6 10 8 18 17 20 7 1 10-6 5-11-4-5-11-6-13-14"/>
+          </g>
+          <path d="M29 54c0-21 14-36 32-36s32 15 32 36c0 15-13 24-32 24S29 69 29 54Z" fill="#70c6ef" stroke="#318fc8" stroke-width="2"/>
+          <path d="M42 35c5-7 12-11 20-11" fill="none" stroke="#c9f1ff" stroke-linecap="round" stroke-width="4"/>
+          <ellipse cx="49" cy="53" rx="4" ry="5" fill="#184e78"/>
+          <ellipse cx="73" cy="53" rx="4" ry="5" fill="#184e78"/>
+          <path d="M54 64c4 4 10 4 14 0" fill="none" stroke="#256d9e" stroke-linecap="round" stroke-width="2.5"/>
+          <circle cx="41" cy="62" r="3" fill="#f6a7b9" opacity=".8"/>
+          <circle cx="81" cy="62" r="3" fill="#f6a7b9" opacity=".8"/>
+        </svg>
+        <figure class="memory-photo"><img src="efbd0d1585a1b538067ad71b534aba2e.png" alt="生日照片一"></figure>
+        <figure class="memory-photo"><img src="20a9e406558139b99768590c37d6e3f7_720.png" alt="生日照片二"></figure>
+      </aside>
+    </div>
+    <div class="heart-field" id="heart-field" aria-label="点击收集爱心"></div>
+    <p class="heart-status" id="heart-status" aria-live="polite">收集小爱心 0/8</p>
+  </main>
+
+  <script>
+    (() => {
+      const gate = document.getElementById("setup-gate");
+      const deviceDialog = document.getElementById("device-dialog");
+      const orientationDialog = document.getElementById("orientation-dialog");
+      const continueButton = document.getElementById("confirm-orientation");
+      const orientationNote = document.getElementById("orientation-note");
+      const site = document.getElementById("site");
+      const popupScene = document.getElementById("popup-scene");
+      const popupContainer = document.getElementById("popup-container");
+      const skipPopups = document.getElementById("skip-popups");
+      const countdownScreen = document.getElementById("countdown-screen");
+      const passwordScreen = document.getElementById("password-screen");
+      const revealScreen = document.getElementById("reveal-screen");
+      const cakeScreen = document.getElementById("cake-screen");
+      const cakeFrame = document.getElementById("cake-frame");
+      const starCanvas = document.getElementById("star-canvas");
+      const heartField = document.getElementById("heart-field");
+      const heartStatus = document.getElementById("heart-status");
+      const passwordForm = document.getElementById("password-form");
+      const passwordInput = document.getElementById("password-input");
+      const passwordError = document.getElementById("password-error");
+      const codeCells = Array.from(passwordForm.querySelectorAll(".code-cell"));
+      const codeValues = Array.from(passwordForm.querySelectorAll(".code-cell-value"));
+      let candleBlown = false;
+      let starAnimation = 0;
+      let popupFinishTimer = 0;
+      let popupSkipTimer = 0;
+      let popupTimers = [];
+      let popupFinished = false;
+
+      function renderPasswordDigits() {
+        const digits = passwordInput.value.replace(/\D/g, "").slice(0, 4);
+        if (passwordInput.value !== digits) passwordInput.value = digits;
+        codeValues.forEach((cell, index) => { cell.textContent = digits[index] || ""; });
+        const activeIndex = Math.min(digits.length, codeCells.length - 1);
+        codeCells.forEach((cell, index) => cell.classList.toggle("is-active", index === activeIndex));
+      }
+
+      function submitPassword() {
+        if (passwordInput.value === "1223") {
+          passwordError.hidden = true;
+          passwordScreen.hidden = true;
+          site.hidden = true;
+          startBlessingPopups();
+          return;
+        }
+        if (passwordInput.value.length < 4) {
+          passwordError.textContent = "请输入完整的 4 位密码。";
+        } else {
+          passwordError.textContent = "密码不正确，请重试。";
+          passwordInput.value = "";
+          renderPasswordDigits();
+        }
+        passwordError.hidden = false;
+        passwordInput.focus();
+      }
+
+      const popupWishes = [
+        "学业有成", "好好爱自己", "好好吃饭", "身体健康", "顺顺利利",
+        "别熬夜", "天凉加衣", "生日快乐", "天天开心", "心想事成",
+        "平安喜乐", "愿你发光", "自由自在", "被爱包围", "万事胜意",
+        "快乐加倍", "不负热爱", "好运常在", "好梦成真", "阳光常伴",
+        "烦恼退散", "愿望成真", "心中有光", "年年欢喜", "岁岁平安",
+        "健康顺意", "每天有糖", "所念皆如愿", "保持可爱", "一路花开",
+        "愿你无忧", "步步生花", "好事发生", "自在明亮", "总被偏爱",
+        "多喝热水", "早点休息", "天天有惊喜", "笑口常开", "常有欢喜"
+      ];
+      const popupPalette = [
+        ["#ffc9da", "#a8365a"], ["#c2e5f5", "#2c6e8c"], ["#ffe6a8", "#9a6a14"],
+        ["#e3d0f7", "#6a4a93"], ["#d6eccb", "#4a7a45"]
+      ];
+
+      function startBlessingPopups() {
+        popupFinished = false;
+        popupTimers.forEach((timer) => window.clearTimeout(timer));
+        popupTimers = [];
+        window.clearTimeout(popupFinishTimer);
+        window.clearTimeout(popupSkipTimer);
+        popupContainer.replaceChildren();
+        popupScene.classList.remove("is-fading");
+        popupScene.hidden = false;
+        skipPopups.hidden = true;
+
+        const bounds = popupScene.getBoundingClientRect();
+        const phone = document.body.classList.contains("device-phone");
+        const popupWidth = phone ? 130 : 150;
+        const popupHeight = phone ? 50 : 60;
+        const count = Math.floor(window.innerWidth / popupWidth)
+          * Math.floor(window.innerHeight / 40) + 50;
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const stagger = reducedMotion ? 0 : Math.max(22, Math.min(60, 6500 / count));
+
+        for (let index = 0; index < count; index += 1) {
+          const card = document.createElement("div");
+          card.className = "popup-card";
+          card.textContent = popupWishes[index % popupWishes.length];
+          const [background, ink] = popupPalette[index % popupPalette.length];
+          card.style.setProperty("--card", background);
+          card.style.setProperty("--ink", ink);
+          card.style.setProperty("--start-tilt", `${(Math.random() - .5) * 3}deg`);
+          card.style.setProperty("--tilt", `${(Math.random() - .5) * 2}deg`);
+          card.style.left = `${Math.random() * Math.max(0, bounds.width - popupWidth)}px`;
+          card.style.top = `${Math.random() * Math.max(0, bounds.height - popupHeight)}px`;
+          popupContainer.append(card);
+          popupTimers.push(window.setTimeout(() => {
+            window.requestAnimationFrame(() => card.classList.add("is-shown"));
+          }, index * stagger));
+        }
+
+        popupSkipTimer = window.setTimeout(() => { skipPopups.hidden = false; }, 2600);
+        popupFinishTimer = window.setTimeout(finishBlessingPopups, count * stagger + (reducedMotion ? 500 : 1600));
+      }
+
+      function finishBlessingPopups() {
+        if (popupFinished) return;
+        popupFinished = true;
+        popupTimers.forEach((timer) => window.clearTimeout(timer));
+        popupTimers = [];
+        window.clearTimeout(popupFinishTimer);
+        window.clearTimeout(popupSkipTimer);
+        popupScene.classList.add("is-fading");
+        window.setTimeout(() => {
+          popupScene.hidden = true;
+          startCake();
+        }, 700);
+      }
+
+      function startCake() {
+        candleBlown = false;
+        cakeScreen.hidden = false;
+        cakeFrame.src = cakeFrame.dataset.src;
+      }
+
+      function showBlessingPage() {
+        if (!candleBlown) return;
+        cakeScreen.hidden = true;
+        cakeFrame.src = "about:blank";
+        revealScreen.hidden = false;
+        createCollectibleHearts();
+        startStarfield();
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.source !== cakeFrame.contentWindow || !event.data) return;
+        if (event.data.type === "birthday-candle-blown") candleBlown = true;
+        if (event.data.type === "birthday-candle-reset") candleBlown = false;
+        if (event.data.type === "birthday-open-blessing" && candleBlown) showBlessingPage();
+      });
+
+      function startStarfield() {
+        const context = starCanvas.getContext("2d");
+        if (!context) return;
+        if (starAnimation) window.cancelAnimationFrame(starAnimation);
+
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const phone = document.body.classList.contains("device-phone");
+        const stars = [];
+        let width = 0;
+        let height = 0;
+        let lastFrame = 0;
+
+        function resizeCanvas() {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          starCanvas.width = Math.round(width * pixelRatio);
+          starCanvas.height = Math.round(height * pixelRatio);
+          context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+          stars.length = 0;
+          const count = phone ? 42 : 68;
+          for (let index = 0; index < count; index += 1) {
+            stars.push({
+              x: Math.random(), y: Math.random(),
+              radius: .55 + Math.random() * 1.35,
+              phase: Math.random() * Math.PI * 2,
+              speed: .6 + Math.random() * 1.3,
+              drift: .003 + Math.random() * .012,
+              warm: Math.random() < .3
+            });
+          }
+          drawStars(0, 0);
+        }
+
+        function drawStars(time, elapsed) {
+          context.clearRect(0, 0, width, height);
+          for (const star of stars) {
+            if (!reducedMotion) star.y = (star.y + star.drift * elapsed) % 1;
+            const shimmer = .25 + .55 * (.5 + .5 * Math.sin(time * .001 * star.speed + star.phase));
+            context.globalAlpha = shimmer;
+            context.fillStyle = star.warm ? "#fff0cf" : "#ffffff";
+            context.beginPath();
+            context.arc(star.x * width, star.y * height, star.radius, 0, Math.PI * 2);
+            context.fill();
+            if (star.radius > 1.45) {
+              context.globalAlpha = shimmer * .55;
+              context.fillRect(star.x * width - 3, star.y * height - .5, 6, 1);
+              context.fillRect(star.x * width - .5, star.y * height - 3, 1, 6);
+            }
+          }
+          context.globalAlpha = 1;
+        }
+
+        function animateStars(time) {
+          const elapsed = lastFrame ? Math.min(.05, (time - lastFrame) / 1000) : 0;
+          lastFrame = time;
+          drawStars(time, elapsed);
+          starAnimation = window.requestAnimationFrame(animateStars);
+        }
+
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas, { passive: true });
+        if (!reducedMotion) starAnimation = window.requestAnimationFrame(animateStars);
+      }
+
+      function createCollectibleHearts() {
+        const positions = [
+          ["3%", "16%"], ["6%", "43%"], ["4%", "76%"], ["19%", "88%"],
+          ["92%", "14%"], ["96%", "40%"], ["94%", "74%"], ["80%", "89%"]
+        ];
+        let collected = 0;
+        heartField.replaceChildren();
+        heartStatus.textContent = `收集小爱心 0/${positions.length}`;
+
+        positions.forEach(([left, top], index) => {
+          const heart = document.createElement("button");
+          heart.type = "button";
+          heart.className = "collect-heart";
+          heart.textContent = "♥";
+          heart.setAttribute("aria-label", `收集第 ${index + 1} 颗爱心`);
+          heart.style.left = left;
+          heart.style.top = top;
+          heart.style.setProperty("--delay", `${index * -0.27}s`);
+          heart.addEventListener("click", () => {
+            if (heart.disabled) return;
+            heart.disabled = true;
+            collected += 1;
+            heartStatus.textContent = collected === positions.length
+              ? "爱心都收集到啦！"
+              : `收集小爱心 ${collected}/${positions.length}`;
+            heart.classList.add("is-collected");
+            window.setTimeout(() => heart.remove(), 240);
+          });
+          heartField.append(heart);
+        });
+      }
+
+      renderPasswordDigits();
+      passwordInput.addEventListener("focus", () => passwordForm.classList.add("has-focus"));
+      passwordInput.addEventListener("blur", () => passwordForm.classList.remove("has-focus"));
+      passwordInput.addEventListener("input", () => {
+        renderPasswordDigits();
+        passwordError.hidden = true;
+        if (passwordInput.value.length === 4) submitPassword();
+      });
+      passwordForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        submitPassword();
+      });
+      document.getElementById("reset-password").addEventListener("click", () => {
+        passwordInput.value = "";
+        passwordError.hidden = true;
+        renderPasswordDigits();
+        passwordInput.focus();
+      });
+      skipPopups.addEventListener("click", finishBlessingPopups);
+
+      // iPadOS may identify an iPad as a Mac; touch points distinguish it from a Mac computer.
+      const userAgent = navigator.userAgent || "";
+      const isTablet = /iPad/i.test(userAgent)
+        || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+        || (/Android/i.test(userAgent) && !/Mobile/i.test(userAgent));
+      document.body.classList.add(isTablet ? "device-tablet" : "device-phone");
+
+      const deviceLabel = document.getElementById("device-label");
+      const deviceName = isTablet ? "平板 · iPad 横屏布局" : "手机 · iPhone 17 横屏布局";
+      deviceLabel.innerHTML = `
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <rect x="4" y="2.5" width="12" height="15" rx="2.4" stroke="currentColor" stroke-width="1.4"></rect>
+          <path d="M8 14.8h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"></path>
+        </svg><span>${deviceName}</span>`;
+
+      // 2026-12-23 00:00 at UTC+8 is 2026-12-22 16:00 UTC.
+      const unlockAt = Date.UTC(2026, 11, 22, 16, 0, 0);
+      let countdownInterval;
+      const twoDigits = (value) => String(value).padStart(2, "0");
+
+      function setCountdownValue(id, value) {
+        const element = document.getElementById(id);
+        if (element.textContent === value) return;
+        element.classList.remove("is-flipping");
+        element.textContent = value;
+        void element.offsetWidth;
+        element.classList.add("is-flipping");
+      }
+
+      function updateCountdown() {
+        const remaining = unlockAt - Date.now();
+        if (remaining <= 0) {
+          countdownScreen.hidden = true;
+          passwordScreen.hidden = false;
+          window.clearInterval(countdownInterval);
+          if (!site.hidden) passwordInput.focus();
+          return;
+        }
+
+        const totalSeconds = Math.floor(remaining / 1000);
+        setCountdownValue("days", String(Math.floor(totalSeconds / 86400)));
+        setCountdownValue("hours", twoDigits(Math.floor(totalSeconds % 86400 / 3600)));
+        setCountdownValue("minutes", twoDigits(Math.floor(totalSeconds % 3600 / 60)));
+        setCountdownValue("seconds", twoDigits(totalSeconds % 60));
+      }
+
+      updateCountdown();
+      if (passwordScreen.hidden) countdownInterval = window.setInterval(updateCountdown, 1000);
+
+      const isLandscape = () => window.innerWidth > window.innerHeight;
+      const updateOrientation = () => {
+        const ready = isLandscape();
+        continueButton.disabled = !ready;
+        orientationNote.textContent = ready ? "" : "横屏后即可继续。";
+      };
+
+      document.getElementById("confirm-device").addEventListener("click", () => {
+        deviceDialog.hidden = true;
+        orientationDialog.hidden = false;
+        updateOrientation();
+        continueButton.focus();
+      });
+
+      continueButton.addEventListener("click", () => {
+        if (!isLandscape()) return;
+        gate.hidden = true;
+        site.hidden = false;
+        if (!passwordScreen.hidden) passwordInput.focus();
+      });
+      window.addEventListener("resize", updateOrientation, { passive: true });
+      window.addEventListener("orientationchange", updateOrientation, { passive: true });
+
+    })();
+  </script>
+</body>
+</html>
